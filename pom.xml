@@ -21,6 +21,28 @@
     </properties>
 
     <dependencies>
+        <!-- OneBusAway 项目：增强 gtfs 实时数据的处理能力 api-->
+        <dependency>
+            <groupId>org.onebusaway</groupId>
+            <artifactId>onebusaway-gtfs-realtime-api</artifactId>
+            <version>1.0.2</version>
+        </dependency>
+        <!-- 貌似是原始的 gtfs 的库：https://gtfs.org/realtime/language-bindings/java/ -->
+        <!--        <dependency>-->
+        <!--            <groupId>org.mobilitydata</groupId>-->
+        <!--            <artifactId>gtfs-realtime-bindings</artifactId>-->
+        <!--            <version>0.0.8-SNAPSHOT</version>-->
+        <!--        </dependency>-->
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-websocket</artifactId>
+            <version>8.1.22.v20160922</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-util</artifactId>
+            <version>8.1.22.v20160922</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -31,24 +53,12 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <!--   springboot tomcat support   -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-tomcat</artifactId>
-            <scope>provided</scope>
-        </dependency>
-<!--        &lt;!&ndash; jsp support &ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.tomcat.embed</groupId>-->
-<!--            <artifactId>tomcat-embed-jasper</artifactId>-->
-<!--            <version>8.5.23</version>-->
-<!--        </dependency>-->
         <!-- OceanBase-->
-        <dependency>
-            <groupId>com.alipay.oceanbase</groupId>
-            <artifactId>oceanbase-client</artifactId>
-            <version>1.1.5</version>
-        </dependency>
+        <!--        <dependency>-->
+        <!--            <groupId>com.alipay.oceanbase</groupId>-->
+        <!--            <artifactId>oceanbase-client</artifactId>-->
+        <!--            <version>1.1.5</version>-->
+        <!--        </dependency>-->
         <!-- mysql -->
         <dependency>
             <groupId>mysql</groupId>
@@ -61,11 +71,12 @@
             <artifactId>mybatis-spring-boot-starter</artifactId>
             <version>2.1.3</version>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-devtools</artifactId>
-            <optional>true</optional>
-        </dependency>
+        <!-- 热部署功能依赖：https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#using.devtools -->
+        <!--        <dependency>-->
+        <!--            <groupId>org.springframework.boot</groupId>-->
+        <!--            <artifactId>spring-boot-devtools</artifactId>-->
+        <!--            <optional>true</optional>-->
+        <!--        </dependency>-->
         <!-- test support-->
         <dependency>
             <groupId>junit</groupId>
@@ -128,12 +139,12 @@
             <version>2.8.5</version>
         </dependency>
 
-<!--&lt;!&ndash;        javafx&ndash;&gt;-->
-<!--        <dependency>-->
-<!--            <groupId>org.openjfx</groupId>-->
-<!--            <artifactId>javafx-controls</artifactId>-->
-<!--            <version>17.0.1</version>-->
-<!--        </dependency>-->
+        <!--&lt;!&ndash;        javafx&ndash;&gt;-->
+        <!--        <dependency>-->
+        <!--            <groupId>org.openjfx</groupId>-->
+        <!--            <artifactId>javafx-controls</artifactId>-->
+        <!--            <version>17.0.1</version>-->
+        <!--        </dependency>-->
     </dependencies>
 
     <build>
@@ -160,8 +171,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>16</source>
+                    <target>16</target>
                 </configuration>
             </plugin>
             <plugin>
