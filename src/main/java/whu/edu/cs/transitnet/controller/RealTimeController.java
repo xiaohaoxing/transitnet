@@ -19,18 +19,21 @@ public class RealTimeController {
 
     @RequestMapping("/realtime/all")
     @ResponseBody
+    @Deprecated
     Queue<List<Vehicle>> getAllRealtimeData() {
         return realtimeService.GetAll();
     }
 
     @RequestMapping("/realtime/update")
     @ResponseBody
+    @Deprecated
     List<List<Vehicle>> getUpdateRealtimeData(@RequestParam(name = "time") long millisec) {
         return realtimeService.GetUpdate(millisec);
     }
 
     @RequestMapping("/realtime/latest")
     @ResponseBody
+    @Deprecated
     List<Vehicle> getLatestRealtimeData(@RequestParam(name = "time") long millisec) {
         return realtimeService.GetLatest(millisec);
     }

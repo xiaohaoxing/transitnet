@@ -1,6 +1,7 @@
 package whu.edu.cs.transitnet.realtime;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.util.*;
@@ -14,11 +15,11 @@ import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
+import com.alibaba.fastjson.JSON;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jetty.websocket.WebSocket.Connection;
 import org.eclipse.jetty.websocket.WebSocketClient;
 import org.eclipse.jetty.websocket.WebSocketClientFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.transit.realtime.GtfsRealtime.FeedEntity;
 import com.google.transit.realtime.GtfsRealtime.FeedMessage;
@@ -28,10 +29,9 @@ import com.google.transit.realtime.GtfsRealtime.VehiclePosition;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class RealtimeService {
-
-    private static final Logger _log = LoggerFactory.getLogger(RealtimeService.class);
 
     @Value("${transitnet.realtime.url}")
     private URI _vehiclePositionsUri;
@@ -42,14 +42,17 @@ public class RealtimeService {
 
     private WebSocketClient _webSocketClient;
 
+    /*
+    连接数据源的 socket 连接，当协议为 ws 协议时使用。
+     */
     private Future<Connection> _webSocketConnection;
 
-    private Map<String, String> _vehicleIdsByEntityIds = new HashMap<>();
+    private final Map<String, String> _vehicleIdsByEntityIds = new HashMap<>();
 
-    private Map<String, Vehicle> _vehiclesById = new ConcurrentHashMap<>();
+    private final Map<String, Vehicle> _vehiclesById = new ConcurrentHashMap<>();
 
     // 位置信息时间序列
-    private Queue<List<Vehicle>> timeSerial = new LinkedList<>();
+    private final Queue<List<Vehicle>> timeSerial = new LinkedList<>();
 
     private final RefreshTask _refreshTask = new RefreshTask();
 
@@ -59,14 +62,17 @@ public class RealtimeService {
 
     private long _mostRecentRefresh = -1;
 
+    @Deprecated
     public Queue<List<Vehicle>> GetAll() {
         return timeSerial;
     }
 
+    @Deprecated
     public List<Vehicle> GetLatest(long time) {
         return _vehiclesById.values().stream().toList();
     }
 
+    @Deprecated
     public List<List<Vehicle>> GetUpdate(long time) {
         return timeSerial.stream().filter(t -> t.get(0).getLastUpdate() > time).collect(Collectors.toList());
 
@@ -87,7 +93,7 @@ public class RealtimeService {
             _executor = Executors.newSingleThreadScheduledExecutor();
             _executor.schedule(_refreshTask, 0, TimeUnit.SECONDS);
         }
-        _log.info("executor is running...");
+        log.info("executor is running...");
     }
 
     @PreDestroy
@@ -105,7 +111,7 @@ public class RealtimeService {
         if (_executor != null) {
             _executor.shutdownNow();
         }
-        _log.info("executor is shutdown...");
+        log.info("executor is shutdown...");
     }
 
     public List<Vehicle> getAllVehicles() {
@@ -114,13 +120,19 @@ public class RealtimeService {
 
     private void refresh() throws IOException {
 
-        _log.info("refreshing vehicle positions");
+        log.info("refreshing vehicle positions");
 
         URL url = _vehiclePositionsUri.toURL();
-        FeedMessage feed = FeedMessage.parseFrom(url.openStream());
+        boolean hadUpdate = false;
+        try {
+            FeedMessage feed = FeedMessage.parseFrom(url.openStream());
+            hadUpdate = processDataset(feed);
+        } catch (IOException e) {
+            // 获取数据失败，继续尝试下一次获取。
+            hadUpdate = false;
+            log.error("[executor]error while fetch data.", e);
 
-        boolean hadUpdate = processDataset(feed);
-
+        }
         if (hadUpdate) {
             if (_dynamicRefreshInterval) {
                 updateRefreshInterval();
@@ -131,15 +143,15 @@ public class RealtimeService {
     }
 
     private boolean processDataset(FeedMessage feed) {
-
+        long currentTime = System.currentTimeMillis();
         List<Vehicle> vehicles = new ArrayList<>();
         boolean update = false;
-        _log.info(String.format("get %d vehicles info", feed.getEntityList().size()));
+        log.info(String.format("get %d vehicles info", feed.getEntityList().size()));
         for (FeedEntity entity : feed.getEntityList()) {
             if (entity.hasIsDeleted() && entity.getIsDeleted()) {
                 String vehicleId = _vehicleIdsByEntityIds.get(entity.getId());
                 if (vehicleId == null) {
-                    _log.warn("unknown entity id in deletion request: " + entity.getId());
+                    log.warn("unknown entity id in deletion request: " + entity.getId());
                     continue;
                 }
                 _vehiclesById.remove(vehicleId);
@@ -162,8 +174,9 @@ public class RealtimeService {
             v.setId(vehicleId);
             v.setLat(position.getLatitude());
             v.setLon(position.getLongitude());
-            v.setLastUpdate(System.currentTimeMillis());
-
+            v.setLastUpdate(currentTime);
+            v.setSpeed(position.getSpeed());
+//            v.set
             Vehicle existing = _vehiclesById.get(vehicleId);
             if (existing == null || existing.getLat() != v.getLat()
                     || existing.getLon() != v.getLon()) {
@@ -177,8 +190,10 @@ public class RealtimeService {
         }
 
         if (update) {
-            _log.info("vehicles updated: " + vehicles.size());
+            log.info("vehicles updated: " + vehicles.size());
             updateTimeSerial(vehicles);
+
+            WsSocketManager.broadcast(JSON.toJSONString(vehicles));
         }
 
         return update;
@@ -194,8 +209,8 @@ public class RealtimeService {
     }
 
     /**
-     * @param vehicle
-     * @return
+     * @param vehicle 原始传输的车辆数据结构体
+     * @return 车辆的 ID
      */
     private String getVehicleId(VehiclePosition vehicle) {
         if (!vehicle.hasVehicle()) {
@@ -211,9 +226,9 @@ public class RealtimeService {
     private void updateRefreshInterval() {
         long t = System.currentTimeMillis();
         if (_mostRecentRefresh != -1) {
-            int refreshInterval = (int) ((t - _mostRecentRefresh) / (2 * 1000));
-            _refreshInterval = Math.max(10, refreshInterval);
-            _log.info("refresh interval: " + _refreshInterval);
+            int refreshInterval = (int) ((t - _mostRecentRefresh) / 1000);
+//            _refreshInterval = Math.max(10, refreshInterval);
+            log.info("refresh interval: " + _refreshInterval + "s");
         }
         _mostRecentRefresh = t;
     }
@@ -224,7 +239,7 @@ public class RealtimeService {
             try {
                 refresh();
             } catch (Exception ex) {
-                _log.error("error refreshing GTFS-realtime data", ex);
+                log.error("error refreshing GTFS-realtime data", ex);
             }
         }
     }
