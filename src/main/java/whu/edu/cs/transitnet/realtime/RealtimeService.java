@@ -188,7 +188,6 @@ public class RealtimeService {
             v.setRouteID(vehicle.getTrip().getRouteId());
             v.setTripID(vehicle.getTrip().getTripId());
             v.setNextStop(vehicle.getStopId());
-            // 时区设置为纽约的西五区
             v.setRecordedTime(LocalDateTime.ofEpochSecond(vehicle.getTimestamp() / 1000, 0, ZoneOffset.ofHours(TimeZone)));
             Vehicle existing = _vehiclesById.get(vehicleId);
             if (existing == null || existing.getLat() != v.getLat()
