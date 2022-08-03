@@ -1,9 +1,10 @@
 package whu.edu.cs.transitnet.realtime;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -36,6 +37,12 @@ public class RealtimeService {
     @Value("${transitnet.realtime.url}")
     private URI _vehiclePositionsUri;
 
+    @Value("${transitnet.realtime.agency-name}")
+    private String AgencyName = "Agency";
+
+
+    @Value("${transitnet.realtime.timezone}")
+    private int TimeZone = 8;
     private ScheduledExecutorService _executor;
 
     private WebSocketClientFactory _webSocketFactory;
@@ -175,8 +182,13 @@ public class RealtimeService {
             v.setLat(position.getLatitude());
             v.setLon(position.getLongitude());
             v.setLastUpdate(currentTime);
+            // set speed
             v.setSpeed(position.getSpeed());
-//            v.set
+            v.setAgencyID(AgencyName);
+            v.setRouteID(vehicle.getTrip().getRouteId());
+            v.setNextStop(vehicle.getStopId());
+            // 时区设置为纽约的西五区
+            v.setRecordedTime(LocalDateTime.ofEpochSecond(vehicle.getTimestamp() / 1000, 0, ZoneOffset.ofHours(TimeZone)));
             Vehicle existing = _vehiclesById.get(vehicleId);
             if (existing == null || existing.getLat() != v.getLat()
                     || existing.getLon() != v.getLon()) {
@@ -200,7 +212,6 @@ public class RealtimeService {
     }
 
     private void updateTimeSerial(List<Vehicle> vehicles) {
-        long t = System.currentTimeMillis();
         if (timeSerial.size() > 10) {
             List<Vehicle> outOfDate = timeSerial.poll();
             // TODO record this out of date time piece to database
