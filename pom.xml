@@ -25,7 +25,7 @@
         <dependency>
             <groupId>org.onebusaway</groupId>
             <artifactId>onebusaway-gtfs-realtime-api</artifactId>
-            <version>1.0.2</version>
+            <version>1.2.0</version>
         </dependency>
         <!-- 貌似是原始的 gtfs 的库：https://gtfs.org/realtime/language-bindings/java/ -->
         <!--        <dependency>-->
@@ -68,11 +68,13 @@
             <scope>test</scope>
         </dependency>
         <!-- OceanBase-->
-        <!--        <dependency>-->
-        <!--            <groupId>com.alipay.oceanbase</groupId>-->
-        <!--            <artifactId>oceanbase-client</artifactId>-->
-        <!--            <version>1.1.5</version>-->
-        <!--        </dependency>-->
+        <dependency>
+            <groupId>com.alipay.oceanbase</groupId>
+            <artifactId>oceanbase-client</artifactId>
+            <version>1.1.5</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/../lib/oceanbase/oceanbase-client-1.1.5.jar</systemPath>
+        </dependency>
         <!-- mysql -->
         <dependency>
             <groupId>mysql</groupId>
@@ -120,13 +122,13 @@
         <dependency>
             <groupId>com.graphhopper</groupId>
             <artifactId>graphhopper-core</artifactId>
-            <version>0.10.3</version>
+            <version>5.3</version>
         </dependency>
 
         <dependency>
             <groupId>com.graphhopper</groupId>
             <artifactId>graphhopper-map-matching-core</artifactId>
-            <version>0.9.0</version>
+            <version>2.0</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -172,6 +174,7 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <includeSystemScope>true</includeSystemScope>
                     <classifier>execute</classifier>
                 </configuration>
             </plugin>
@@ -197,6 +200,29 @@
                     <skipTests>true</skipTests>
                 </configuration>
             </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-install-plugin</artifactId>-->
+<!--                <version>2.5.2</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>install-oceanbase</id>-->
+<!--                        <phase>package</phase>-->
+<!--                        <configuration>-->
+<!--                            <file>${basedir}/lib/oceanbase/oceanbase-client-1.1.5.jar</file>-->
+<!--                            <repositoryLayout>default</repositoryLayout>-->
+<!--                            <groupId>org.springframework.boot</groupId>-->
+<!--                            <artifactId>spring-boot-starter-parent</artifactId>-->
+<!--                            <version>2.6.1</version>-->
+<!--                            <packaging>jar</packaging>-->
+<!--                            <generatePom>true</generatePom>-->
+<!--                        </configuration>-->
+<!--                        <goals>-->
+<!--                            <goal>install-file</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 
