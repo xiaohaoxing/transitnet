@@ -17,6 +17,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 import com.alibaba.fastjson.JSON;
+import com.google.transit.realtime.GtfsRealtime;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jetty.websocket.WebSocket.Connection;
 import org.eclipse.jetty.websocket.WebSocketClient;
@@ -30,6 +31,9 @@ import com.google.transit.realtime.GtfsRealtime.VehiclePosition;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+/**
+ *
+ */
 @Slf4j
 @Service
 public class RealtimeService {
@@ -253,6 +257,47 @@ public class RealtimeService {
                 log.error("error refreshing GTFS-realtime data", ex);
             }
         }
+    }
+
+    /**
+     * 按照entity的格式获取最新数据
+     * @return
+     */
+    public List<Entity> getLatestEntities(){
+        List<Entity> entities = new ArrayList<>();
+        try {
+            URL url = _vehiclePositionsUri.toURL();
+            GtfsRealtime.FeedMessage feed = GtfsRealtime.FeedMessage.parseFrom(url.openStream());
+
+            for (GtfsRealtime.FeedEntity feedEntity : feed.getEntityList()) {
+                Entity entity = new Entity();
+                String id = feedEntity.getId();
+                entity.setId(id);
+                GtfsRealtime.VehiclePosition vehicle = feedEntity.getVehicle();
+                GtfsRealtime.TripDescriptor trip = vehicle.getTrip();
+                String routeId = trip.getRouteId();
+                entity.setRouteId(routeId);
+                String tripId = trip.getTripId();
+                entity.setTripId(tripId);
+                String vehicleId = vehicle.getVehicle().getId();
+                entity.setVehicleId(vehicleId);
+                String startDate = trip.getStartDate();
+                entity.setStartDate(startDate);
+                float lat = vehicle.getPosition().getLatitude();
+                entity.setLat(lat);
+                float lon = vehicle.getPosition().getLongitude();
+                entity.setLon(lon);
+                float bearing = vehicle.getPosition().getBearing();
+                entity.setBearing(bearing);
+                float speed = vehicle.getPosition().getSpeed();
+                entity.setSpeed(speed);
+                long timestamp = vehicle.getTimestamp();
+                entity.setTimestamp(timestamp);
+                entities.add(entity);
+            }
+        } catch (Exception e){
+        }
+        return entities;
     }
 
 //    private class IncrementalWebSocket implements OnBinaryMessage {

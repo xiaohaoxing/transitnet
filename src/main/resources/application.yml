@@ -1,0 +1,4 @@
+nyc:
+  boundingbox: 40.502981,-74.252016,40.933637,-73.701761
+  url: http://gtfsrt.prod.obanyc.com/vehiclePositions?key=5c610be6-ce15-4320-aec6-091b31ebd7d9
+  resolution: 7
